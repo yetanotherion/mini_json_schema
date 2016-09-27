@@ -14,7 +14,7 @@ class TypeValidator(DictParser):
     def __init__(self, schema):
         self.schema = schema
 
-    def validate(self, value):
+    def validate(self, value, get_validator):
         if self._type is None:
             raise NotImplementedError
         if not isinstance(value, self._type):
@@ -29,8 +29,8 @@ class IntegerValidator(TypeValidator):
         self.minValue = dictionary.get("minValue")
         super(IntegerValidator, self).__init__(dictionary)
 
-    def validate(self, value):
-        if not super(IntegerValidator, self).validate(value):
+    def validate(self, value, get_validator):
+        if not super(IntegerValidator, self).validate(value, get_validator):
             return False
         if self.minValue is not None:
             return value >= self.minValue
@@ -46,39 +46,20 @@ class ArrayValidator(TypeValidator):
     _type = list
 
 
-def get_leaf_validator(string, value):
-    if string == "integer":
-        return IntegerValidator(value)
-    elif string == "string":
-        return StringValidator(value)
-    elif string == "array":
-        return ArrayValidator(value)
-
-
 class ObjectValidator(TypeValidator):
     _type = dict
 
-    def validate(self, value):
-        if not super(ObjectValidator, self).validate(value):
+    def validate(self, value, get_validator):
+        if not super(ObjectValidator, self).validate(value, get_validator):
             return False
         for prop_name, prop_schema in self.schema.get('properties', {}).iteritems():
-            typestr = prop_schema.get("type")
-            if typestr is not None:
-                validator = self.get_validator(typestr, prop_schema)
+            validator = get_validator(prop_schema)
+            if validator is not None:
                 prop_value = value.get(prop_name)
                 if prop_value is not None:
-                    if not validator.validate(prop_value):
+                    if not validator.validate(prop_value, get_validator):
                         return False
         return True
-
-    @staticmethod
-    def get_validator(typestr, value):
-        v = get_leaf_validator(typestr, value)
-        if v is not None:
-            return v
-        if typestr == "object":
-            return ObjectValidator(value)
-        raise NotImplementedError
 
 
 class JsonSchema(DictParser):
@@ -98,10 +79,36 @@ class JsonSchema(DictParser):
                 raise ValueError("Invalid path: {} does not exist".format(path))
         return node
 
+    @staticmethod
+    def get_leaf_validator(typestr, value):
+        if typestr == "integer":
+            return IntegerValidator(value)
+        elif typestr == "string":
+            return StringValidator(value)
+        elif typestr == "array":
+            return ArrayValidator(value)
+
+    @classmethod
+    def get_non_ref_validator(cls, typestr, value):
+        v = cls.get_leaf_validator(typestr, value)
+        if v is not None:
+            return v
+        if typestr == "object":
+            return ObjectValidator(value)
+        raise NotImplementedError
+
+    def get_validator(self, node):
+        typestr = node.get("type")
+        if typestr is not None:
+            return self.get_non_ref_validator(typestr, node)
+        ref = node.get("$ref")
+        if ref is not None:
+            node = self.find_in_schema(self.jsons, ref)
+            return self.get_validator(node)
+
     def validate(self, jsonval):
         if not self.jsons:
             return True
-        validator = ObjectValidator.get_validator(self.must_attr(self.jsons,
-                                                                 "type"),
-                                                  self.jsons)
-        return validator.validate(jsonval)
+
+        validator = self.get_validator(self.jsons)
+        return validator.validate(jsonval, self.get_validator)

@@ -80,5 +80,33 @@ class TestJsonSchema(unittest.TestCase):
                                                     "#/definitions/def_1/subdef_1"),
                           "1_val")
 
+    def test_ref(self):
+        j = JsonSchema({"type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "object",
+                                "properties": {
+                                    "firstName": {
+                                        "type": "string"},
+                                    "lastName": {
+                                        "type": "string"}
+                                }
+                            },
+                            "age": {
+                                "$ref": "#/definitions/positive_integer"
+                            }
+                        },
+                        "definitions":
+                        {"positive_integer":
+                         {"type": "integer",
+                          "minValue": 0
+                          }}})
+        self.assertTrue(j.validate({"name": {"firstName": "someFirstName",
+                                             "lastName": "someLastName"},
+                                    "age": 1}))
+        self.assertFalse(j.validate({"name": {"firstName": "someFirstName",
+                                              "lastName": "someLastName"},
+                                     "age": -1}))
+
 if __name__ == '__main__':
     unittest.main()
