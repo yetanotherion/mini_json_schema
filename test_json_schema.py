@@ -21,14 +21,14 @@ class TestJsonSchema(unittest.TestCase):
             self.assertFalse(j.validate(ex))
 
     # @unittest.skip
-    def testest_integer_min_value(self):
+    def test_integer_min_value(self):
         j = JsonSchema({"type": "integer",
                         "minValue": 1})
         self.assertTrue(j.validate(1))
         self.assertFalse(j.validate(0))
 
     # @unittest.skip
-    def testest_string_loadjs(self):
+    def test_string_loadjs(self):
         j = JsonSchema({"type": "string"})
         self.assertTrue(j.validate("1"))
         for ex in [{}, 1, [1, 2], None]:
