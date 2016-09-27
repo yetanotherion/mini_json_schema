@@ -54,6 +54,25 @@ class TestJsonSchema(unittest.TestCase):
         self.assertFalse(j.validate({"firstName": 1,
                                     "lastName": "myLastName"}))
 
+    def test_rec_object_properties(self):
+        j = JsonSchema({"type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "object",
+                                "properties": {
+                                    "firstName": {
+                                        "type": "string"},
+                                    "lastName": {
+                                        "type": "string"}
+                                }
+                            }
+                        }})
+        self.assertTrue(j.validate({"name": {"firstName": "myFirstName",
+                                             "lastName": "myLastName"}}))
+        self.assertFalse(j.validate({"name":
+                                     {"firstName": 1,
+                                      "lastName": "myLastName"}}))
+
 
 if __name__ == '__main__':
     unittest.main()

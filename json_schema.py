@@ -1,6 +1,3 @@
-# type: int, list, object
-
-
 class DictParser(object):
     @staticmethod
     def must_attr(_dict, attr):
@@ -49,7 +46,7 @@ class ArrayValidator(TypeValidator):
     _type = list
 
 
-def get_non_object_validator(string, value):
+def get_leaf_validator(string, value):
     if string == "integer":
         return IntegerValidator(value)
     elif string == "string":
@@ -64,32 +61,34 @@ class ObjectValidator(TypeValidator):
     def validate(self, value):
         if not super(ObjectValidator, self).validate(value):
             return False
-        for k, v in self.schema.get('properties', {}):
-            if v.get("type") is not None:
-                validator = get_non_object_validator(v.get("type"))
-                k_value = value.get(k)
-                if k_value is not None:
-                    if not validator.validate(k_value):
+        for prop_name, prop_schema in self.schema.get('properties', {}).iteritems():
+            typestr = prop_schema.get("type")
+            if typestr is not None:
+                validator = self.get_validator(typestr, prop_schema)
+                prop_value = value.get(prop_name)
+                if prop_value is not None:
+                    if not validator.validate(prop_value):
                         return False
         return True
 
-
-def get_validator(string, value):
-    v = get_non_object_validator(string, value)
-    if v is not None:
-        return v
-    if string == "object":
-        return ObjectValidator(value)
-    raise NotImplementedError
+    @staticmethod
+    def get_validator(typestr, value):
+        v = get_leaf_validator(typestr, value)
+        if v is not None:
+            return v
+        if typestr == "object":
+            return ObjectValidator(value)
+        raise NotImplementedError
 
 
 class JsonSchema(DictParser):
     def __init__(self, jsons):
         self.jsons = jsons
 
-    def validate(self, jsons):
+    def validate(self, jsonval):
         if not self.jsons:
             return True
-        validator = get_validator(self.must_attr(self.jsons, "type"),
-                                  self.jsons)
-        return validator.validate(jsons)
+        validator = ObjectValidator.get_validator(self.must_attr(self.jsons,
+                                                                 "type"),
+                                                  self.jsons)
+        return validator.validate(jsonval)
