@@ -85,6 +85,19 @@ class JsonSchema(DictParser):
     def __init__(self, jsons):
         self.jsons = jsons
 
+    @staticmethod
+    def find_in_schema(_dict, path):
+        prefix = "#/"
+        if not path.startswith(prefix):
+            raise ValueError("Invalid path {}".format(path))
+        path = path[len(prefix):].split('/')
+        node = _dict
+        for p in path:
+            node = node.get(p)
+            if node is None:
+                raise ValueError("Invalid path: {} does not exist".format(path))
+        return node
+
     def validate(self, jsonval):
         if not self.jsons:
             return True

@@ -73,6 +73,12 @@ class TestJsonSchema(unittest.TestCase):
                                      {"firstName": 1,
                                       "lastName": "myLastName"}}))
 
+    def test_find_in_schema(self):
+        self.assertEquals(JsonSchema.find_in_schema({"definitions":
+                                                     {"def_1":
+                                                      {"subdef_1": "1_val"}}},
+                                                    "#/definitions/def_1/subdef_1"),
+                          "1_val")
 
 if __name__ == '__main__':
     unittest.main()
