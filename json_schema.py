@@ -64,6 +64,10 @@ class ObjectValidator(TypeValidator):
 class JsonSchema(DictParser):
     def __init__(self, jsons):
         self.jsons = jsons
+        validator = None
+        if jsons is not None:
+            validator = self.get_validator(jsons)
+        self.validator = validator
 
     @staticmethod
     def find_in_schema(_dict, path):
@@ -102,6 +106,4 @@ class JsonSchema(DictParser):
     def validate(self, jsonval):
         if not self.jsons:
             return True
-
-        validator = self.get_validator(self.jsons)
-        return validator.validate(jsonval, self.get_validator)
+        return self.validator.validate(jsonval, self.get_validator)
