@@ -104,6 +104,6 @@ class JsonSchema(DictParser):
             return self.get_validator(node)
 
     def validate(self, jsonval):
-        if not self.jsons:
+        if self.validator is None:
             return True
         return self.validator.validate(jsonval, self.get_validator)
