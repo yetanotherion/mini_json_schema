@@ -80,20 +80,14 @@ class JsonSchema(DictParser):
         return node
 
     @staticmethod
-    def get_leaf_validator(typestr, value):
+    def get_non_ref_validator(typestr, value):
         if typestr == "integer":
             return IntegerValidator(value)
         elif typestr == "string":
             return StringValidator(value)
         elif typestr == "array":
             return ArrayValidator(value)
-
-    @classmethod
-    def get_non_ref_validator(cls, typestr, value):
-        v = cls.get_leaf_validator(typestr, value)
-        if v is not None:
-            return v
-        if typestr == "object":
+        elif typestr == "object":
             return ObjectValidator(value)
         raise NotImplementedError
 
