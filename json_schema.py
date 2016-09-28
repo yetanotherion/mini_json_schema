@@ -9,7 +9,6 @@ class DictParser(object):
 
 class TypeValidator(DictParser):
     _type = None
-    # to define
 
     def __init__(self, schema):
         self.schema = schema
